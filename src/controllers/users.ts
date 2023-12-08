@@ -1,56 +1,55 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import User from "../models/user";
-import { ERROR_CODE, NOT_FOUND, ERROR_DEFAULT } from "../constants/constants";
+import BadRequestError from "../errors/BadRequestError";
+import ErrorNotFound from "../errors/ErrorNotFound";
 
-export const getUsers = (req: Request, res: Response) => {
+export function getUsers(req: Request, res: Response, next: NextFunction) {
   return User.find({})
     .then((users) => res.send(users))
-    .catch(() =>
-      res.status(ERROR_DEFAULT).send({ message: "Произошла ошибка" }),
-    );
-};
+    .catch((err) => next(err));
+}
 
-export const getUserId = (req: Request, res: Response) => {
+export function getUserId(req: Request, res: Response, next: NextFunction) {
   return User.findById(req.params.userId)
     .then((users) => {
       if (!users?._id) {
-        console.log(users);
-
-        res
-          .status(NOT_FOUND)
-          .send({ message: "Запрашиваемый пользователь не найден" });
+        next(
+          new ErrorNotFound({
+            message: "Запрашиваемый пользователь не найден",
+          }),
+        );
       }
       res.status(200).send({ data: users });
     })
-    .catch(
-      (err) =>
-        err.name === "CastError" &&
-        res
-          .status(ERROR_DEFAULT)
-          .send({ message: "Переданы некорректные данные" }),
-    );
-};
+    .catch((err) => {
+      if (err.name === "CastError") {
+        next(new BadRequestError({ message: "Переданы некорректные данные" }));
+      } else {
+        next(err);
+      }
+    });
+}
 
-export const createUser = (req: Request, res: Response) => {
+export function createUser(req: Request, res: Response, next: NextFunction) {
   const { name, about, avatar } = req.body;
 
   return User.create({ name, about, avatar })
     .then((users) => {
       if (!users) {
-        res.status(ERROR_CODE).send("Переданы некорректные данные");
+        next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
       res.send({ data: users });
     })
-    .catch(
-      (err) =>
-        err.name === "ValidationError" &&
-        res
-          .status(ERROR_DEFAULT)
-          .send({ message: "Переданы некорректные данные" }),
-    );
-};
+    .catch((err) => {
+      if (err.name === "ValidationError") {
+        next(new BadRequestError({ message: "Переданы некорректные данные" }));
+      } else {
+        next(err);
+      }
+    });
+}
 
-export const updateProfile = (req: Request, res: Response) => {
+export function updateProfile(req: Request, res: Response, next: NextFunction) {
   const { name, about } = req.body;
   return User.findByIdAndUpdate(
     req.user?._id,
@@ -59,20 +58,20 @@ export const updateProfile = (req: Request, res: Response) => {
   )
     .then((users) => {
       if (!users) {
-        res.status(ERROR_CODE).send("Переданы некорректные данные");
+        next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
       res.status(200).send({ data: users });
     })
-    .catch(
-      (err) =>
-        err.name === "ValidationError" &&
-        res
-          .status(ERROR_DEFAULT)
-          .send({ message: "Переданы некорректные данные" }),
-    );
-};
+    .catch((err) => {
+      if (err.name === "ValidationError") {
+        next(new BadRequestError({ message: "Переданы некорректные данные" }));
+      } else {
+        next(err);
+      }
+    });
+}
 
-export const updateAvatar = (req: Request, res: Response) => {
+export function updateAvatar(req: Request, res: Response, next: NextFunction) {
   const { avatar } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -81,15 +80,15 @@ export const updateAvatar = (req: Request, res: Response) => {
   )
     .then((user) => {
       if (!user) {
-        res.status(ERROR_CODE).send("Переданы некорректные данные");
+        next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
       res.status(200).send({ data: user });
     })
-    .catch(
-      (err) =>
-        err.name === "ValidationError" &&
-        res
-          .status(ERROR_DEFAULT)
-          .send({ message: "Переданы некорректные данные" }),
-    );
-};
+    .catch((err) => {
+      if (err.name === "ValidationError") {
+        next(new BadRequestError({ message: "Переданы некорректные данные" }));
+      } else {
+        next(err);
+      }
+    });
+}

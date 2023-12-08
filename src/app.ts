@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import usersRouter from "./routes/users";
 import cardsRouter from "./routes/cards";
@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect(mongoURI);
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   req.user = {
     _id: "6571c9dbcd5ab424eed06925",
   };

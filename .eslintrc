@@ -8,7 +8,7 @@
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 2021,
+        "ecmaVersion": "latest",
         "sourceType": "module"
     },
     "plugins": [
@@ -38,6 +38,8 @@
                 "ts": "never"
             }
         ],
-        "no-underscore-dangle": ["error", { "allow": ["_id"] }]
+        "no-underscore-dangle": ["error", { "allow": ["_id"] }],
+        "quotes": ["error", "double"],
+       "implicit-arrow-linebreak": ["error", "beside"]
     }
 }
