@@ -5,7 +5,7 @@ import ErrorNotFound from "../errors/ErrorNotFound";
 
 export function getUsers(req: Request, res: Response, next: NextFunction) {
   return User.find({})
-    .then((users) => res.send(users))
+    .then((users) => res.status(200).send(users))
     .catch((err) => next(err));
 }
 
@@ -13,20 +13,19 @@ export function getUserId(req: Request, res: Response, next: NextFunction) {
   return User.findById(req.params.userId)
     .then((users) => {
       if (!users?._id) {
-        next(
+        return next(
           new ErrorNotFound({
             message: "Запрашиваемый пользователь не найден",
           }),
         );
       }
-      res.status(200).send({ data: users });
+      return res.status(200).send({ data: users });
     })
     .catch((err) => {
       if (err.name === "CastError") {
-        next(new BadRequestError({ message: "Переданы некорректные данные" }));
-      } else {
-        next(err);
+        return next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
+      return next(err);
     });
 }
 
@@ -36,16 +35,15 @@ export function createUser(req: Request, res: Response, next: NextFunction) {
   return User.create({ name, about, avatar })
     .then((users) => {
       if (!users) {
-        next(new BadRequestError({ message: "Переданы некорректные данные" }));
+        return next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
-      res.send({ data: users });
+      return res.status(201).send({ data: users });
     })
     .catch((err) => {
       if (err.name === "ValidationError") {
-        next(new BadRequestError({ message: "Переданы некорректные данные" }));
-      } else {
-        next(err);
+        return next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
+      return next(err);
     });
 }
 
@@ -58,16 +56,15 @@ export function updateProfile(req: Request, res: Response, next: NextFunction) {
   )
     .then((users) => {
       if (!users) {
-        next(new BadRequestError({ message: "Переданы некорректные данные" }));
+        return next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
-      res.status(200).send({ data: users });
+      return res.status(200).send({ data: users });
     })
     .catch((err) => {
       if (err.name === "ValidationError") {
-        next(new BadRequestError({ message: "Переданы некорректные данные" }));
-      } else {
-        next(err);
+        return next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
+      return next(err);
     });
 }
 
@@ -80,15 +77,14 @@ export function updateAvatar(req: Request, res: Response, next: NextFunction) {
   )
     .then((user) => {
       if (!user) {
-        next(new BadRequestError({ message: "Переданы некорректные данные" }));
+        return next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
-      res.status(200).send({ data: user });
+      return res.status(200).send({ data: user });
     })
     .catch((err) => {
       if (err.name === "ValidationError") {
-        next(new BadRequestError({ message: "Переданы некорректные данные" }));
-      } else {
-        next(err);
+        return next(new BadRequestError({ message: "Переданы некорректные данные" }));
       }
+      return next(err);
     });
 }
