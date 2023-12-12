@@ -61,15 +61,17 @@ export function likeCard(req: Request, res: Response, next: NextFunction) {
 
 export function deleteCardId(req: Request, res: Response, next: NextFunction) {
   const { cardId } = req.params;
-  return Card.findById(cardId)
+
+  Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        return next(new ErrorNotFound("Карточка не найдена"));
+        throw new ErrorNotFound("Карточка не найдена");
       }
 
-      if (card?.owner.toString() !== req.user._id) {
-        return next(new Forbidden("Вы не можете удалить эту карточку"));
+      if (card.owner.toString() !== req.user._id) {
+        throw new Forbidden("Вы не можете удалить эту карточку");
       }
+
       return Card.findByIdAndDelete(cardId);
     })
     .then((deletedCard) => {
@@ -81,9 +83,7 @@ export function deleteCardId(req: Request, res: Response, next: NextFunction) {
     })
     .catch((err: Error) => {
       if (err.name === "CastError") {
-        return next(
-          new BadRequestError({ message: "Переданы некорректные данные" })
-        );
+        return next(new BadRequestError("Переданы некорректные данные"));
       }
       return next(err);
     });

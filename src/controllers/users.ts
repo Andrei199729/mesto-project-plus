@@ -7,6 +7,7 @@ import BadRequestError from "../errors/BadRequestError";
 import ErrorNotFound from "../errors/ErrorNotFound";
 import Unauthorized from "../errors/Unauthorized";
 import ErrorConflict from "../errors/ErrorConflict";
+import Forbidden from "../errors/Forbidden";
 
 export function getUsers(req: Request, res: Response, next: NextFunction) {
   return User.find({})
@@ -96,17 +97,22 @@ export function createUser(req: Request, res: Response, next: NextFunction) {
 
 export function updateProfile(req: Request, res: Response, next: NextFunction) {
   const { name, about } = req.body;
+
   return User.findByIdAndUpdate(
     req.user?._id,
     { name, about },
     { new: true, runValidators: true }
   )
+    .orFail(() => {
+      throw new BadRequestError("Переданы некорректные данные");
+    })
     .then((users) => {
       if (!users) {
         return next(
           new BadRequestError({ message: "Переданы некорректные данные" })
         );
       }
+
       return res.send({ data: users });
     })
     .catch((err) => {
@@ -121,8 +127,9 @@ export function updateProfile(req: Request, res: Response, next: NextFunction) {
 
 export function updateAvatar(req: Request, res: Response, next: NextFunction) {
   const { avatar } = req.body;
+
   User.findByIdAndUpdate(
-    req.user._id,
+    req.user?._id,
     { avatar },
     { new: true, runValidators: true }
   )
