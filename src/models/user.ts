@@ -1,12 +1,24 @@
-import mongoose from "mongoose";
+import mongoose, { Model, Document } from "mongoose";
+import validator from "validator";
+import bcrypt from "bcryptjs";
+import Unauthorized from "../errors/Unauthorized";
 
 export interface IUser {
   name: string;
   about: string;
   avatar: string;
+  email: string;
+  password: string;
 }
 
-const userSchema = new mongoose.Schema<IUser>(
+interface UserModel extends Model<IUser> {
+  findUserByCredentials(
+    email: string,
+    password: string
+  ): Promise<Document<unknown, any, IUser>>;
+}
+
+const userSchema = new mongoose.Schema<IUser, UserModel>(
   {
     name: {
       type: String,
@@ -25,10 +37,45 @@ const userSchema = new mongoose.Schema<IUser>(
     avatar: {
       type: String,
       required: [true, "Поле 'avatar' должно быть заполнено"],
+      validate: {
+        validator: (v: string) => validator.isURL(v, { require_protocol: true }),
+        message: "Поле 'avatar' не соответствует формату URL",
+      },
       default:
         "https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png",
+    },
+    email: {
+      type: String,
+      validate: {
+        validator: (v: string) => validator.isEmail(v),
+        message: "Неправильный формат почты",
+      },
+      required: [true, "Поле 'email' должно быть заполнено"],
+      unique: true,
+    },
+    password: {
+      type: String,
+      select: false,
+      required: true,
     },
   },
   { versionKey: false }
 );
-export default mongoose.model<IUser>("user", userSchema);
+
+userSchema.statics.findUserByCredentials = function (email: string, password: string) {
+  return this.findOne({ email }).then((user) => {
+    if (!user) {
+      throw new Unauthorized("Указан некорректный Email или пароль.");
+    }
+
+    return bcrypt.compare(password, user.password).then((matched) => {
+      if (!matched) {
+        throw new Unauthorized("Указан некорректный Email или пароль.");
+      }
+
+      return user;
+    });
+  });
+};
+
+export default mongoose.model<IUser, UserModel>("user", userSchema);

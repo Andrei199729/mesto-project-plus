@@ -3,6 +3,7 @@ import { Error } from "mongoose";
 import Card from "../models/card";
 import BadRequestError from "../errors/BadRequestError";
 import ErrorNotFound from "../errors/ErrorNotFound";
+import Forbidden from "../errors/Forbidden";
 
 export function getCards(req: Request, res: Response, next: NextFunction) {
   return Card.find({})
@@ -59,12 +60,24 @@ export function likeCard(req: Request, res: Response, next: NextFunction) {
 }
 
 export function deleteCardId(req: Request, res: Response, next: NextFunction) {
-  return Card.findOneAndDelete({ _id: req.params.cardId })
+  const { cardId } = req.params;
+  return Card.findById(cardId)
     .then((card) => {
       if (!card) {
         return next(new ErrorNotFound("Карточка не найдена"));
       }
-      return res.send({ data: card, message: "Карточка удалена" });
+
+      if (card?.owner.toString() !== req.user._id) {
+        return next(new Forbidden("Вы не можете удалить эту карточку"));
+      }
+      return Card.findByIdAndDelete(cardId);
+    })
+    .then((deletedCard) => {
+      if (!deletedCard) {
+        return next(new ErrorNotFound("Карточка не найдена"));
+      }
+
+      return res.send({ data: deletedCard, message: "Карточка удалена" });
     })
     .catch((err: Error) => {
       if (err.name === "CastError") {
