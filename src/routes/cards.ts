@@ -10,14 +10,13 @@ import {
   createCardValid,
   parameterIdValid,
 } from "../middlewares/validationJoi";
-import auth from "../middlewares/auth";
 
 const router = Router();
 
-router.get("/", auth, getCards);
-router.post("/", auth, createCardValid, createCard);
-router.delete("/:cardId", auth, parameterIdValid("cardId"), deleteCardId);
-router.put("/:cardId/likes", auth, parameterIdValid("cardId"), likeCard);
-router.delete("/:cardId/likes", auth, parameterIdValid("cardId"), dislikeCard);
+router.get("/", getCards);
+router.post("/", createCardValid, createCard);
+router.delete("/:cardId", parameterIdValid("cardId"), deleteCardId);
+router.put("/:cardId/likes", parameterIdValid("cardId"), likeCard);
+router.delete("/:cardId/likes", parameterIdValid("cardId"), dislikeCard);
 
 export default router;

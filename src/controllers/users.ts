@@ -1,4 +1,6 @@
-import { NextFunction, Request, Response } from "express";
+import {
+  NextFunction, Request, Response,
+} from "express";
 import { Error } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
@@ -7,7 +9,6 @@ import BadRequestError from "../errors/BadRequestError";
 import ErrorNotFound from "../errors/ErrorNotFound";
 import Unauthorized from "../errors/Unauthorized";
 import ErrorConflict from "../errors/ErrorConflict";
-import Forbidden from "../errors/Forbidden";
 
 export function getUsers(req: Request, res: Response, next: NextFunction) {
   return User.find({})
@@ -64,14 +65,14 @@ export function createUser(req: Request, res: Response, next: NextFunction) {
     name, about, avatar, email, password,
   } = req.body;
 
-  return bcrypt
-    .hash(password, 10)
-    .then((hash: string) => User.create({
-      email,
-      password: hash,
-    }))
+  User.findOne({ email })
     .then((user) => {
-      res.status(201).send(user);
+      if (user) {
+        throw new ErrorConflict(
+          `Пользователь с таким email ${email} уже зарегистрирован`
+        );
+      }
+      return bcrypt.hash(password, 10);
     })
     .then((hash) => User.create({
       name,
@@ -80,18 +81,18 @@ export function createUser(req: Request, res: Response, next: NextFunction) {
       email,
       password: hash,
     }))
-    .then((user) => User.findOne({ _id: user._id }))
+    .then((user) => User.findOne({ _id: user._id })) // прячет пароль
     .then((user) => {
-      res.status(201).send(user);
+      res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return next(new BadRequestError("Переданы некорректные данные."));
+        next(new BadRequestError("Переданы некорректные данные."));
+      } else if (err.code === 11000) {
+        next(new ErrorConflict({ message: err.errorMessage }));
+      } else {
+        next(err);
       }
-      if (err.code === 11000) {
-        return next(new ErrorConflict({ message: err.errorMessage }));
-      }
-      return next(err);
     });
 }
 

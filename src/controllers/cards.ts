@@ -72,7 +72,7 @@ export function deleteCardId(req: Request, res: Response, next: NextFunction) {
         throw new Forbidden("Вы не можете удалить эту карточку");
       }
 
-      return Card.findByIdAndDelete(cardId);
+      return Card.deleteOne({ _id: cardId });
     })
     .then((deletedCard) => {
       if (!deletedCard) {
